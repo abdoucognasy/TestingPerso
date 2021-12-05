@@ -27,7 +27,7 @@ namespace TestingPerso
                                 Entity entity = context.InputParameters["Target"] as Entity;
                                 EntityReference entityReference = context.InputParameters["Target"] as EntityReference;
                                 //Declarations
-                                string noteEtudiant = entity["acs_noteetudiant"].ToString();
+                                decimal noteEtudiant = (decimal)entity["acs_noteetudiant"];
                                 //EntityReference etudiantt = (EntityReference)entity.Attributes["acs_etudiant"];
                                 EntityReference etudiantt = entity.GetAttributeValue<EntityReference>("acs_etudiant");
                                 Guid etudiant = entity.Id;
@@ -45,19 +45,37 @@ namespace TestingPerso
                                 tracingService.Trace("etudiant.id.tostring: " + etudiantt.Id);
                                 tracingService.Trace("etudiant acs_etudiant: " + entity["acs_etudiant"].ToString());
 
-                                if (results.Entities.Count == 0)
+                                if (results.Entities.Count == 1)
                                 {
-                                    entity["acs_notemoyenne"] = noteEtudiant;
+                                    tracingService.Trace("count = 1");
+                                    entity["acs_notemoyenne"] = noteEtudiant.ToString();
                                 }
-                                else
+                                else if (results.Entities.Count > 1)
                                 {
+                                    tracingService.Trace("count > 1");
+                                    //entity["acs_notemoyenne"] = "zzz";
+                                    //tracingService.Trace("acs_notemoyenne apres set: "+ entity["acs_notemoyenne"]);
+
+
                                     decimal totalNote = 0;
-                                    foreach (var item in results.Entities)
+                                    foreach (Entity item in results.Entities)
                                     {
-                                         totalNote = totalNote + item.GetAttributeValue<decimal>("acs_noteetudiant");
+                                        if (item.Contains("acs_noteetudiant"))
+                                        {
+                                            decimal notes = item.GetAttributeValue<decimal>("acs_noteetudiant");
+                                            totalNote += notes;
+                                            tracingService.Trace("item notes =>" + item.GetAttributeValue<decimal>("acs_noteetudiant"));
+                                        }
+                                        else
+                                        {
+                                            tracingService.Trace("No acs_noteetudiant value found :(");
+                                        }
                                     }
+                                    totalNote = totalNote + noteEtudiant;
+
+
                                     tracingService.Trace("tot note " + totalNote);
-                                    decimal moyenne = totalNote / results.Entities.Count;
+                                    decimal moyenne = totalNote / results.Entities.Count + 1;
                                     tracingService.Trace("moyenne " + moyenne);
                                     entity["acs_notemoyenne"] = moyenne;
                                 }
