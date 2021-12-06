@@ -35,7 +35,10 @@ namespace TestingPerso
                                 //Query Expression for etudiant
                                 QueryExpression query = new QueryExpression("acs_devoir");
                                 query.ColumnSet.AddColumns("acs_noteetudiant", "acs_etudiant", "acs_evaluation");
-                                query.Criteria.AddCondition("acs_etudiant", ConditionOperator.Equal, etudiantt.Id);
+                                query.Criteria = new FilterExpression();
+                                FilterExpression filter = query.Criteria.AddFilter(LogicalOperator.And);
+                                filter.AddCondition("acs_etudiant", ConditionOperator.Equal, etudiantt.Id);
+                                filter.AddCondition("acs_evaluation", ConditionOperator.Equal, evaluation.Id);
                                 EntityCollection results = service.RetrieveMultiple(query);
 
                                 tracingService.Trace(results.Entities.Count.ToString());
