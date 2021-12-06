@@ -30,32 +30,33 @@ namespace TestingPerso
                                 decimal noteEtudiant = (decimal)entity["acs_noteetudiant"];
                                 //EntityReference etudiantt = (EntityReference)entity.Attributes["acs_etudiant"];
                                 EntityReference etudiantt = entity.GetAttributeValue<EntityReference>("acs_etudiant");
-                                Guid etudiant = entity.Id;
-                                tracingService.Trace(etudiant.ToString());
+                                EntityReference evaluation = entity.GetAttributeValue<EntityReference>("acs_evaluation");
 
-                                //Query Expression
+                                //Query Expression for etudiant
                                 QueryExpression query = new QueryExpression("acs_devoir");
-                                query.ColumnSet.AddColumns("acs_noteetudiant", "acs_etudiant");
+                                query.ColumnSet.AddColumns("acs_noteetudiant", "acs_etudiant", "acs_evaluation");
                                 query.Criteria.AddCondition("acs_etudiant", ConditionOperator.Equal, etudiantt.Id);
                                 EntityCollection results = service.RetrieveMultiple(query);
 
                                 tracingService.Trace(results.Entities.Count.ToString());
                                 tracingService.Trace("Note actuelle: " + noteEtudiant);
-                                tracingService.Trace("etudiant.id.tostring: " + etudiant);
                                 tracingService.Trace("etudiant.id.tostring: " + etudiantt.Id);
-                                tracingService.Trace("etudiant acs_etudiant: " + entity["acs_etudiant"].ToString());
+                                tracingService.Trace("etudiant acs_etudiant: " + entity["acs_etudiant"]);
 
-                                if (results.Entities.Count == 1)
+                                //Query Expression for Eval
+                                QueryExpression query1 = new QueryExpression("acs_devoir");
+                                query1.ColumnSet.AddColumns("acs_meilleurenote", "acs_evaluation");
+                                query1.Criteria.AddCondition("acs_evaluation", ConditionOperator.Equal, evaluation.Id);
+                                EntityCollection result1 = service.RetrieveMultiple(query1);
+
+                                if (results.Entities.Count == 0)
                                 {
                                     tracingService.Trace("count = 1");
-                                    entity["acs_notemoyenne"] = noteEtudiant.ToString();
+                                    entity["acs_notemoyenne"] = noteEtudiant;
                                 }
-                                else if (results.Entities.Count > 1)
+                                if (results.Entities.Count >= 1)
                                 {
                                     tracingService.Trace("count > 1");
-                                    //entity["acs_notemoyenne"] = "zzz";
-                                    //tracingService.Trace("acs_notemoyenne apres set: "+ entity["acs_notemoyenne"]);
-
 
                                     decimal totalNote = 0;
                                     foreach (Entity item in results.Entities)
@@ -75,9 +76,26 @@ namespace TestingPerso
 
 
                                     tracingService.Trace("tot note " + totalNote);
-                                    decimal moyenne = totalNote / results.Entities.Count + 1;
+                                    decimal moyenne = totalNote / (results.Entities.Count + 1);
                                     tracingService.Trace("moyenne " + moyenne);
                                     entity["acs_notemoyenne"] = moyenne;
+                                }
+
+                                if (result1.Entities.Count == 0)
+                                {
+                                    entity["acs_meilleurenote"] = noteEtudiant;
+                                }
+                                if (result1.Entities.Count >= 1)
+                                {
+                                    decimal notes = 0;
+                                    foreach (Entity item in result1.Entities)
+                                    {
+                                        if (item.Contains("acs_noteetudiant"))
+                                        {
+                                            notes = item.GetAttributeValue<decimal>("acs_noteetudiant");
+                                        }
+                                    }
+                                    entity["acs_meilleurenote"] = Math.Max(notes ,noteEtudiant);
                                 }
                             }
                         }
